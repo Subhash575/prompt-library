@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A simple local prompt library for saving and managing reusable prompts."
+    />
+    <title>Prompt Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="./" aria-label="Prompt Library home">
+          <span class="brand-mark" aria-hidden="true">P</span>
+          <span>Prompt Library</span>
+        </a>
+        <div class="header-note">
+          <span class="status-dot"></span> Stored locally in your browser
+        </div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <p class="eyebrow">Your ideas, ready when you are</p>
+          <h1 id="page-title">
+            A quieter place<br /><em>for better prompts.</em>
+          </h1>
+          <p class="intro-copy">
+            Capture the prompts you reach for often. Keep them close, organized,
+            and entirely yours.
+          </p>
+        </section>
+
+        <section class="workspace" aria-label="Prompt workspace">
+          <form class="prompt-form" id="prompt-form">
+            <div class="form-heading">
+              <div>
+                <p class="section-kicker">Create new</p>
+                <h2>Save a prompt</h2>
+              </div>
+              <span class="shortcut">Local only</span>
+            </div>
+
+            <label for="prompt-title">Title</label>
+            <input
+              id="prompt-title"
+              name="title"
+              type="text"
+              placeholder="e.g. Blog post editor"
+              maxlength="80"
+              required
+            />
+
+            <label for="prompt-model">Model name</label>
+            <input
+              id="prompt-model"
+              name="model"
+              type="text"
+              placeholder="e.g. GPT-4.1"
+              maxlength="100"
+              required
+            />
+
+            <div class="label-row">
+              <label for="prompt-content">Prompt content</label>
+              <span id="character-count">0 characters</span>
+            </div>
+            <textarea
+              id="prompt-content"
+              name="content"
+              rows="10"
+              placeholder="Write or paste your prompt here..."
+              maxlength="5000"
+              required
+            ></textarea>
+
+            <label class="code-toggle" for="prompt-is-code">
+              <input id="prompt-is-code" name="isCode" type="checkbox" />
+              <span>Estimate as code</span>
+            </label>
+
+            <button class="primary-button" type="submit">
+              <span>Save prompt</span>
+              <span class="button-arrow" aria-hidden="true">-&gt;</span>
+            </button>
+            <p class="form-hint">
+              Prompts are saved automatically to this browser.
+            </p>
+          </form>
+
+          <section class="library-panel" aria-labelledby="library-title">
+            <div class="library-heading">
+              <div>
+                <p class="section-kicker">Your collection</p>
+                <h2 id="library-title">
+                  Saved prompts
+                  <span id="prompt-count" class="count-badge">0</span>
+                </h2>
+              </div>
+              <div class="library-actions">
+                <button class="tool-button" id="export-prompts" type="button">
+                  Export
+                </button>
+                <button class="tool-button" id="import-prompts" type="button">
+                  Import
+                </button>
+                <input
+                  id="import-file"
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                />
+                <button
+                  class="clear-button"
+                  id="clear-all"
+                  type="button"
+                  hidden
+                >
+                  Clear all
+                </button>
+              </div>
+            </div>
+            <div id="prompt-list" class="prompt-list" aria-live="polite"></div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>Prompt Library</span>
+        <span>Private by design</span>
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
