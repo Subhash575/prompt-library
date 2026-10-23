@@ -120,8 +120,12 @@ function loadPrompts() {
   }
 }
 
+function omitUiState(key, value) {
+  return key === "editingNoteId" ? undefined : value;
+}
+
 function savePrompts() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts, omitUiState));
 }
 
 function validatePrompt(prompt, index = 0) {
@@ -213,7 +217,10 @@ function getStatistics(items) {
 }
 
 function createExportData() {
-  const storedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  const storedData = JSON.parse(
+    localStorage.getItem(STORAGE_KEY) || "[]",
+    omitUiState,
+  );
   validatePromptCollection(storedData);
   return {
     version: EXPORT_VERSION,
