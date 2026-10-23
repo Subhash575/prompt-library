@@ -570,6 +570,12 @@ promptList.addEventListener("click", (event) => {
   const deleteButton = event.target.closest("[data-delete-id]");
   if (!deleteButton) return;
 
+  const promptToDelete = prompts.find(
+    (prompt) => prompt.id === deleteButton.dataset.deleteId,
+  );
+  if (!promptToDelete) return;
+  if (!window.confirm(`Delete "${promptToDelete.title}"?`)) return;
+
   prompts = prompts.filter(
     (prompt) => prompt.id !== deleteButton.dataset.deleteId,
   );
