@@ -367,9 +367,7 @@ function renderPrompts() {
         <span class="summary-token">Tokens: ${formatTokenRange(prompt.metadata.tokenEstimate)}</span>
         <span class="summary-date">${formatDate(prompt.metadata.createdAt)}</span>
       </div>
-      <div class="prompt-card-rating" aria-label="Rating ${escapeHtml(prompt.rating)} out of 5">
-        ${renderRatingStars(prompt)}
-      </div>
+      ${renderRatingSummary(prompt)}
       <div class="prompt-card-details">
         <p class="prompt-card-content">${escapeHtml(prompt.content)}</p>
         <div class="prompt-card-meta">
@@ -398,6 +396,12 @@ function renderPrompts() {
 
 function formatTokenRange(tokenEstimate) {
   return `${Math.round(tokenEstimate.min)}-${Math.round(tokenEstimate.max)}`;
+}
+
+function renderRatingSummary(prompt) {
+  const rating = Math.min(5, Math.max(0, Math.floor(Number(prompt.rating) || 0)));
+
+  return `<span class="prompt-card-rating" role="img" aria-label="Rated ${rating} out of 5"><span class="rating-filled">${"★".repeat(rating)}</span>${"☆".repeat(5 - rating)}</span>`;
 }
 
 function renderRatingStars(prompt) {

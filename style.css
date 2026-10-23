@@ -416,15 +416,15 @@ textarea:focus {
   content: "•";
 }
 .prompt-card-rating {
-  display: flex;
-  gap: 1px;
+  display: block;
   margin-top: 8px;
-}
-.prompt-card-rating .star-button {
-  width: 19px;
-  height: 19px;
+  color: #b8c5bf;
   font-size: 16px;
-  pointer-events: none;
+  line-height: 19px;
+  letter-spacing: 1px;
+}
+.prompt-card-rating .rating-filled {
+  color: #d39a4e;
 }
 .prompt-card-details {
   display: none;
