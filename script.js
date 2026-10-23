@@ -1,5 +1,4 @@
 const STORAGE_KEY = "prompt-library-items";
-const IMPORT_BACKUP_KEY = "prompt-library-import-backup";
 const EXPORT_VERSION = 1;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
 const CONFIDENCE_LEVELS = ["high", "medium", "low"];
@@ -286,7 +285,6 @@ function mergePrompts(importedPrompts) {
 function importPrompts(file) {
   const previousStorage = localStorage.getItem(STORAGE_KEY);
   const previousPrompts = prompts;
-  localStorage.setItem(IMPORT_BACKUP_KEY, previousStorage || "[]");
   return file
     .text()
     .then((contents) => {
@@ -325,7 +323,6 @@ function importPrompts(file) {
       window.alert(`Import failed and was rolled back: ${error.message}`);
     })
     .finally(() => {
-      localStorage.removeItem(IMPORT_BACKUP_KEY);
       importFileInput.value = "";
     });
 }
