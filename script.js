@@ -1,6 +1,8 @@
 const STORAGE_KEY = "prompt-library-items";
 const IMPORT_BACKUP_KEY = "prompt-library-import-backup";
 const EXPORT_VERSION = 1;
+const SAFE_ID_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
+const CONFIDENCE_LEVELS = ["high", "medium", "low"];
 
 const form = document.querySelector("#prompt-form");
 const titleInput = document.querySelector("#prompt-title");
@@ -126,7 +128,7 @@ function validatePrompt(prompt, index = 0) {
   if (!prompt || typeof prompt !== "object" || Array.isArray(prompt)) {
     throw new Error(`Prompt ${index + 1} must be an object.`);
   }
-  if (typeof prompt.id !== "string" || !prompt.id.trim())
+  if (typeof prompt.id !== "string" || !SAFE_ID_PATTERN.test(prompt.id))
     throw new Error(`Prompt ${index + 1} is missing a valid ID.`);
   if (typeof prompt.title !== "string" || !prompt.title.trim())
     throw new Error(`Prompt ${index + 1} is missing a title.`);
@@ -144,14 +146,36 @@ function validatePrompt(prompt, index = 0) {
     !isIsoTimestamp(prompt.metadata.updatedAt)
   )
     throw new Error(`Prompt ${index + 1} has invalid timestamps.`);
+  const tokenEstimate = prompt.metadata.tokenEstimate;
   if (
-    typeof prompt.rating !== "number" ||
+    !tokenEstimate ||
+    typeof tokenEstimate !== "object" ||
+    !Number.isFinite(tokenEstimate.min) ||
+    !Number.isFinite(tokenEstimate.max) ||
+    !CONFIDENCE_LEVELS.includes(tokenEstimate.confidence)
+  )
+    throw new Error(`Prompt ${index + 1} has an invalid token estimate.`);
+  if (
+    !Number.isInteger(prompt.rating) ||
     prompt.rating < 0 ||
     prompt.rating > 5
   )
     throw new Error(`Prompt ${index + 1} has an invalid rating.`);
   if (!Array.isArray(prompt.notes))
     throw new Error(`Prompt ${index + 1} has invalid notes.`);
+  prompt.notes.forEach((note, noteIndex) => {
+    if (
+      !note ||
+      typeof note !== "object" ||
+      typeof note.id !== "string" ||
+      !SAFE_ID_PATTERN.test(note.id) ||
+      typeof note.content !== "string" ||
+      !note.content.trim()
+    )
+      throw new Error(
+        `Prompt ${index + 1} has an invalid note ${noteIndex + 1}.`,
+      );
+  });
 }
 
 function validatePromptCollection(candidate) {
@@ -330,20 +354,20 @@ function renderPrompts() {
   promptList.innerHTML = prompts
     .map(
       (prompt) => `
-    <article class="prompt-card" data-card-id="${prompt.id}" tabindex="0" aria-expanded="false">
+    <article class="prompt-card" data-card-id="${escapeHtml(prompt.id)}" tabindex="0" aria-expanded="false">
       <div class="prompt-card-header">
         <div>
           <h3>${escapeHtml(prompt.title)}</h3>
           <p class="prompt-card-preview">${escapeHtml(prompt.content)}</p>
         </div>
-        <button class="delete-button" type="button" data-delete-id="${prompt.id}" aria-label="Delete ${escapeHtml(prompt.title)}">Delete</button>
+        <button class="delete-button" type="button" data-delete-id="${escapeHtml(prompt.id)}" aria-label="Delete ${escapeHtml(prompt.title)}">Delete</button>
       </div>
       <div class="prompt-card-summary">
         <span class="model-badge">${escapeHtml(prompt.metadata.model)}</span>
         <span class="summary-token">Tokens: ${formatTokenRange(prompt.metadata.tokenEstimate)}</span>
         <span class="summary-date">${formatDate(prompt.metadata.createdAt)}</span>
       </div>
-      <div class="prompt-card-rating" aria-label="Rating ${prompt.rating} out of 5">
+      <div class="prompt-card-rating" aria-label="Rating ${escapeHtml(prompt.rating)} out of 5">
         ${renderRatingStars(prompt)}
       </div>
       <div class="prompt-card-details">
@@ -356,7 +380,7 @@ function renderPrompts() {
         </div>
         <div class="token-estimate">
           <span>Estimated tokens: ${formatTokenRange(prompt.metadata.tokenEstimate)}</span>
-          <span class="confidence-badge confidence-${prompt.metadata.tokenEstimate.confidence}">${prompt.metadata.tokenEstimate.confidence} confidence</span>
+          <span class="confidence-badge confidence-${escapeHtml(prompt.metadata.tokenEstimate.confidence)}">${escapeHtml(prompt.metadata.tokenEstimate.confidence)} confidence</span>
         </div>
         <div class="rating-row">
           <span class="rating-label">Effectiveness</span>
@@ -381,7 +405,7 @@ function renderRatingStars(prompt) {
     const rating = index + 1;
     const isSelected = rating <= prompt.rating;
 
-    return `<button class="star-button${isSelected ? " selected" : ""}" type="button" data-rating-id="${prompt.id}" data-rating-value="${rating}" aria-label="Rate ${rating} out of 5" aria-pressed="${isSelected}">${isSelected ? "★" : "☆"}</button>`;
+    return `<button class="star-button${isSelected ? " selected" : ""}" type="button" data-rating-id="${escapeHtml(prompt.id)}" data-rating-value="${rating}" aria-label="Rate ${rating} out of 5" aria-pressed="${isSelected}">${isSelected ? "★" : "☆"}</button>`;
   }).join("");
 }
 
@@ -390,21 +414,23 @@ function renderNotes(prompt) {
     (note) => note.id === prompt.editingNoteId,
   );
 
+  const safeId = escapeHtml(prompt.id);
+
   return `
-    <section class="notes-section" aria-labelledby="notes-title-${prompt.id}">
+    <section class="notes-section" aria-labelledby="notes-title-${safeId}">
       <div class="notes-heading">
-        <h4 id="notes-title-${prompt.id}">Notes</h4>
+        <h4 id="notes-title-${safeId}">Notes</h4>
         <span>${prompt.notes.length}</span>
       </div>
       <div class="notes-list">
         ${prompt.notes.length === 0 ? '<p class="notes-empty">No notes yet.</p>' : prompt.notes.map((note) => renderNote(note, prompt, editingNote)).join("")}
       </div>
-      <form class="note-form" data-note-form="${prompt.id}">
-        <label class="sr-only" for="note-input-${prompt.id}">${editingNote ? "Edit note" : "Add a note"}</label>
-        <textarea id="note-input-${prompt.id}" name="note" rows="2" maxlength="1000" placeholder="${editingNote ? "Update this note..." : "Add a note about this prompt..."}" required>${editingNote ? escapeHtml(editingNote.content) : ""}</textarea>
+      <form class="note-form" data-note-form="${safeId}">
+        <label class="sr-only" for="note-input-${safeId}">${editingNote ? "Edit note" : "Add a note"}</label>
+        <textarea id="note-input-${safeId}" name="note" rows="2" maxlength="1000" placeholder="${editingNote ? "Update this note..." : "Add a note about this prompt..."}" required>${editingNote ? escapeHtml(editingNote.content) : ""}</textarea>
         <div class="note-form-actions">
           <button class="note-save-button" type="submit">${editingNote ? "Save changes" : "Save note"}</button>
-          ${editingNote ? `<button class="note-cancel-button" type="button" data-cancel-note="${prompt.id}">Cancel</button>` : ""}
+          ${editingNote ? `<button class="note-cancel-button" type="button" data-cancel-note="${safeId}">Cancel</button>` : ""}
         </div>
       </form>
     </section>
@@ -422,8 +448,8 @@ function renderNote(note, prompt, editingNote) {
       <div class="note-card-footer">
         <span>Updated ${formatDate(note.updatedAt || note.createdAt)}</span>
         <div>
-          <button class="note-action" type="button" data-edit-note="${prompt.id}" data-note-id="${note.id}">Edit</button>
-          <button class="note-action note-delete-action" type="button" data-delete-note="${prompt.id}" data-note-id="${note.id}">Delete</button>
+          <button class="note-action" type="button" data-edit-note="${escapeHtml(prompt.id)}" data-note-id="${escapeHtml(note.id)}">Edit</button>
+          <button class="note-action note-delete-action" type="button" data-delete-note="${escapeHtml(prompt.id)}" data-note-id="${escapeHtml(note.id)}">Delete</button>
         </div>
       </div>
     </article>
@@ -431,7 +457,7 @@ function renderNote(note, prompt, editingNote) {
 }
 
 function escapeHtml(value) {
-  return value.replace(
+  return String(value).replace(
     /[&<>'"]/g,
     (character) =>
       ({
